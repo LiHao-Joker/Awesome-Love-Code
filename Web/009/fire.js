@@ -28,39 +28,31 @@ function animate() {
     var newTime = new Date();
     // 增大烟花生成频率：减小时间间隔基数，让烟花更密集
     if (newTime - lastTime > 400 + (window.innerHeight - 767) / 3) {
-        var random = true;
+        // 移除形状烟花逻辑，只生成普通烟花
         var x = getRandom(canvas.width / 5, canvas.width * 4 / 5);
         var y = getRandom(50, 200);
-        // 随机决定是否生成形状烟花（增加随机性，让普通烟花也出现）
-        var useShape = Math.random() > 0.4; // 60%概率形状，40%普通烟花
-        if (useShape) {
-            var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
-                    x: canvas.width / 2,
-                    y: 200
-                },
-                document.querySelectorAll(".shape")[parseInt(getRandom(0, document.querySelectorAll(".shape").length))]);
-            bigbooms.push(bigboom)
-        } else {
-            var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
-                x: x,
-                y: y
-            });
-            bigbooms.push(bigboom)
-        }
+        // 只创建普通烟花，不再传递shape参数
+        var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
+            x: x,
+            y: y
+        });
+        bigbooms.push(bigboom)
         lastTime = newTime;
         console.log(bigbooms)
     }
-    stars.foreach(function() {
+    // 修复foreach拼写错误（原代码的语法错误）
+    stars.forEach(function() {
         this.paint()
     });
     drawMoon();
-    bigbooms.foreach(function(index) {
+    // 修复foreach拼写错误，同时移除形状烟花相关的清理逻辑
+    bigbooms.forEach(function(index) {
         var that = this;
         if (!this.dead) {
             this._move();
             this._drawLight()
         } else {
-            this.booms.foreach(function(index) {
+            this.booms.forEach(function(index) {
                 if (!this.dead) {
                     this.moveTo(index)
                 } else {
@@ -96,7 +88,8 @@ function drawMoon() {
         ctx.restore()
     }
 }
-Array.prototype.foreach = function(callback) {
+// 修复foreach拼写错误为标准的forEach
+Array.prototype.forEach = function(callback) {
     for (var i = 0; i < this.length; i++) {
         if (this[i] !== null) {
             callback.apply(this[i], [i])
@@ -110,23 +103,24 @@ var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame || 
 canvas.onclick = function() {
     var x = event.clientX;
     var y = event.clientY;
+    // 点击只生成普通烟花
     var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
         x: x,
         y: y
     });
     bigbooms.push(bigboom)
 };
-var Boom = function(x, r, c, boomArea, shape) {
+var Boom = function(x, r, c, boomArea) {
+    // 移除shape参数，不再初始化shape相关属性
     this.booms = [];
     this.x = x;
     this.y = (canvas.height + r);
     this.r = r;
     this.c = c;
-    this.shape = shape || false;
     this.boomArea = boomArea;
     this.theta = 0;
     this.dead = false;
-    // 继续增大爆炸判定阈值，使烟花在更早阶段爆炸（但范围已加大，影响不大）
+    // 继续增大爆炸判定阈值，使烟花在更早阶段爆炸
     this.ba = parseInt(getRandom(200, 400))
 };
 Boom.prototype = {
@@ -144,11 +138,8 @@ Boom.prototype = {
         this.x = this.x + dx * 0.01;
         this.y = this.y + dy * 0.01;
         if (Math.abs(dx) <= this.ba && Math.abs(dy) <= this.ba) {
-            if (this.shape) {
-                this._shapBoom()
-            } else {
-                this._boom()
-            }
+            // 移除shape判断，只执行普通爆炸逻辑
+            this._boom();
             this.dead = true
         } else {
             this._paint()
@@ -192,84 +183,10 @@ Boom.prototype = {
             var frag = new Frag(this.x, this.y, radius, color, x, y);
             this.booms.push(frag)
         }
-    },
-    _shapBoom: function() {
-        var that = this;
-        // 采样间隔保持2，形状已经足够密集
-        putValue(ocas, octx, this.shape, 2,
-            function(dots) {
-                var dx = canvas.width / 2 - that.x;
-                var dy = canvas.height / 2 - that.y;
-                for (var i = 0; i < dots.length; i++) {
-                    color = {
-                        a: dots[i].a,
-                        b: dots[i].b,
-                        c: dots[i].c
-                    };
-                    var x = dots[i].x;
-                    var y = dots[i].y;
-                    var radius = 1.5; // 形状粒子稍微大一点
-                    var frag = new Frag(that.x, that.y, radius, color, x - dx, y - dy);
-                    that.booms.push(frag)
-                }
-            })
     }
+    // 彻底移除_shapBoom方法
 };
-function putValue(canvas, context, ele, dr, callback) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    var img = new Image();
-    if (ele.innerHTML.indexOf("img") >= 0) {
-        img.src = ele.getElementsByTagName("img")[0].src;
-        imgload(img,
-            function() {
-                context.drawImage(img, canvas.width / 2 - img.width / 2, canvas.height / 2 - img.width / 2);
-                dots = getimgData(canvas, context, dr);
-                callback(dots)
-            })
-    } else {
-        var text = ele.innerHTML;
-        context.save();
-        var fontSize = 200;
-        context.font = fontSize + "px 宋体 bold";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillStyle = "rgba(" + parseInt(getRandom(128, 255)) + "," + parseInt(getRandom(128, 255)) + "," + parseInt(getRandom(128, 255)) + " , 1)";
-        context.fillText(text, canvas.width / 2, canvas.height / 2);
-        context.restore();
-        dots = getimgData(canvas, context, dr);
-        callback(dots)
-    }
-}
-function imgload(img, callback) {
-    if (img.complete) {
-        callback.call(img)
-    } else {
-        img.onload = function() {
-            callback.call(this)
-        }
-    }
-}
-function getimgData(canvas, context, dr) {
-    var imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    var dots = [];
-    for (var x = 0; x < imgData.width; x += dr) {
-        for (var y = 0; y < imgData.height; y += dr) {
-            var i = (y * imgData.width + x) * 4;
-            if (imgData.data[i + 3] > 128) {
-                var dot = {
-                    x: x,
-                    y: y,
-                    a: imgData.data[i],
-                    b: imgData.data[i + 1],
-                    c: imgData.data[i + 2]
-                };
-                dots.push(dot)
-            }
-        }
-    }
-    return dots
-}
+// 移除形状烟花相关的辅助函数（putValue/imgload/getimgData），这些不再需要
 function getRandom(a, b) {
     return Math.random() * (b - a) + a
 }
@@ -334,3 +251,6 @@ Frag.prototype = {
         this.paint()
     }
 };
+
+// 初始化动画
+initAnimate();
