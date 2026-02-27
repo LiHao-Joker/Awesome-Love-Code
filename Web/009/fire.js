@@ -28,7 +28,7 @@ function animate() {
     var newTime = new Date();
     // 增大烟花生成频率：减小时间间隔基数，让烟花更密集
     if (newTime - lastTime > 400 + (window.innerHeight - 767) / 3) {
-        var random = false;
+        var random = true;
         var x = getRandom(canvas.width / 5, canvas.width * 4 / 5);
         var y = getRandom(50, 200);
         // 随机决定是否生成形状烟花（增加随机性，让普通烟花也出现）
