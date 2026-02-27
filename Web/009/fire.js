@@ -6,10 +6,6 @@ ocas.width = canvas.width = window.innerWidth;
 ocas.height = canvas.height = window.innerHeight;
 var bigbooms = [];
 
-// window.onload = function() {
-//     initAnimate();
-// };
-
 document.getElementById("iframMusic").onload = function(){
     var music = document.getElementById("music");
     music.src = 'music.mp3';
@@ -127,7 +123,8 @@ var Boom = function(x, r, c, boomArea, shape) {
     this.boomArea = boomArea;
     this.theta = 0;
     this.dead = false;
-    this.ba = parseInt(getRandom(80, 200))
+    // 修改1：增大爆炸判定的距离阈值（原80-200）
+    this.ba = parseInt(getRandom(150, 300))
 };
 Boom.prototype = {
     _paint: function() {
@@ -163,7 +160,8 @@ Boom.prototype = {
         ctx.restore()
     },
     _boom: function() {
-        var fragNum = getRandom(30, 200);
+        // 修改2：增加烟花粒子数量（原30-200）
+        var fragNum = getRandom(100, 500);
         var style = getRandom(0, 10) >= 5 ? 1 : 2;
         var color;
         if (style === 1) {
@@ -173,7 +171,8 @@ Boom.prototype = {
                 c: parseInt(getRandom(128, 255))
             }
         }
-        var fanwei = parseInt(getRandom(300, 400));
+        // 修改3：大幅增大爆炸范围（原300-400）
+        var fanwei = parseInt(getRandom(600, 800));
         for (var i = 0; i < fragNum; i++) {
             if (style === 2) {
                 color = {
@@ -192,7 +191,8 @@ Boom.prototype = {
     },
     _shapBoom: function() {
         var that = this;
-        putValue(ocas, octx, this.shape, 5,
+        // 修改4：减小采样间隔（原5），让形状烟花粒子更密集、范围更完整
+        putValue(ocas, octx, this.shape, 2,
             function(dots) {
                 var dx = canvas.width / 2 - that.x;
                 var dy = canvas.height / 2 - that.y;
@@ -318,7 +318,8 @@ Frag.prototype = {
         ctx.restore()
     },
     moveTo: function(index) {
-        this.ty = this.ty + 0.3;
+        // 修改5：增加粒子下落速度，让范围展开更明显（原0.3）
+        this.ty = this.ty + 0.5;
         var dx = this.tx - this.x,
             dy = this.ty - this.y;
         this.x = Math.abs(dx) < 0.1 ? this.tx: (this.x + dx * 0.1);
