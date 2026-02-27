@@ -26,22 +26,25 @@ function animate() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
     var newTime = new Date();
-    if (newTime - lastTime > 500 + (window.innerHeight - 767) / 2) {
+    // 增大烟花生成频率：减小时间间隔基数，让烟花更密集
+    if (newTime - lastTime > 400 + (window.innerHeight - 767) / 3) {
         var random = false;
         var x = getRandom(canvas.width / 5, canvas.width * 4 / 5);
         var y = getRandom(50, 200);
-        if (random) {
-            var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
-                x: x,
-                y: y
-            });
-            bigbooms.push(bigboom)
-        } else {
+        // 随机决定是否生成形状烟花（增加随机性，让普通烟花也出现）
+        var useShape = Math.random() > 0.4; // 60%概率形状，40%普通烟花
+        if (useShape) {
             var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
                     x: canvas.width / 2,
                     y: 200
                 },
                 document.querySelectorAll(".shape")[parseInt(getRandom(0, document.querySelectorAll(".shape").length))]);
+            bigbooms.push(bigboom)
+        } else {
+            var bigboom = new Boom(getRandom(canvas.width / 3, canvas.width * 2 / 3), 2, "#FFF", {
+                x: x,
+                y: y
+            });
             bigbooms.push(bigboom)
         }
         lastTime = newTime;
@@ -123,8 +126,8 @@ var Boom = function(x, r, c, boomArea, shape) {
     this.boomArea = boomArea;
     this.theta = 0;
     this.dead = false;
-    // 修改1：增大爆炸判定的距离阈值（原80-200）
-    this.ba = parseInt(getRandom(150, 300))
+    // 继续增大爆炸判定阈值，使烟花在更早阶段爆炸（但范围已加大，影响不大）
+    this.ba = parseInt(getRandom(200, 400))
 };
 Boom.prototype = {
     _paint: function() {
@@ -155,13 +158,13 @@ Boom.prototype = {
         ctx.save();
         ctx.fillStyle = "rgba(255,228,150,0.3)";
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r + 3 * Math.random() + 1, 0, 2 * Math.PI);
+        ctx.arc(this.x, this.y, this.r + 5 * Math.random() + 2, 0, 2 * Math.PI);
         ctx.fill();
         ctx.restore()
     },
     _boom: function() {
-        // 修改2：增加烟花粒子数量（原30-200）
-        var fragNum = getRandom(100, 500);
+        // 大幅增加粒子数量：200 ~ 800
+        var fragNum = getRandom(200, 800);
         var style = getRandom(0, 10) >= 5 ? 1 : 2;
         var color;
         if (style === 1) {
@@ -171,8 +174,8 @@ Boom.prototype = {
                 c: parseInt(getRandom(128, 255))
             }
         }
-        // 修改3：大幅增大爆炸范围（原300-400）
-        var fanwei = parseInt(getRandom(600, 800));
+        // 扩大爆炸范围：800 ~ 1200
+        var fanwei = parseInt(getRandom(800, 1200));
         for (var i = 0; i < fragNum; i++) {
             if (style === 2) {
                 color = {
@@ -184,14 +187,15 @@ Boom.prototype = {
             var a = getRandom( - Math.PI, Math.PI);
             var x = getRandom(0, fanwei) * Math.cos(a) + this.x;
             var y = getRandom(0, fanwei) * Math.sin(a) + this.y;
-            var radius = getRandom(0, 2);
+            // 加大粒子半径：1 ~ 4
+            var radius = getRandom(1, 4);
             var frag = new Frag(this.x, this.y, radius, color, x, y);
             this.booms.push(frag)
         }
     },
     _shapBoom: function() {
         var that = this;
-        // 修改4：减小采样间隔（原5），让形状烟花粒子更密集、范围更完整
+        // 采样间隔保持2，形状已经足够密集
         putValue(ocas, octx, this.shape, 2,
             function(dots) {
                 var dx = canvas.width / 2 - that.x;
@@ -204,7 +208,7 @@ Boom.prototype = {
                     };
                     var x = dots[i].x;
                     var y = dots[i].y;
-                    var radius = 1;
+                    var radius = 1.5; // 形状粒子稍微大一点
                     var frag = new Frag(that.x, that.y, radius, color, x - dx, y - dy);
                     that.booms.push(frag)
                 }
@@ -318,8 +322,8 @@ Frag.prototype = {
         ctx.restore()
     },
     moveTo: function(index) {
-        // 修改5：增加粒子下落速度，让范围展开更明显（原0.3）
-        this.ty = this.ty + 0.5;
+        // 增加下落速度：0.8，让烟花扩散更迅速、更张扬
+        this.ty = this.ty + 0.8;
         var dx = this.tx - this.x,
             dy = this.ty - this.y;
         this.x = Math.abs(dx) < 0.1 ? this.tx: (this.x + dx * 0.1);
